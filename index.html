@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Camera to Telegram</title>
+  <style>
+    body { text-align: center; font-family: sans-serif; margin-top: 20px; }
+    video, canvas { width: 80%; max-width: 400px; margin: 10px; border-radius: 10px; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <h2>📸 Take a Photo</h2>
+  <video id="video" autoplay playsinline></video><br>
+  <button onclick="takePhoto()">Capture</button>
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Camera access denied: " + err);
+      });
+
+    function takePhoto() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(blob => {
+        sendToTelegram(blob);
+      }, 'image/jpeg', 0.9);
+    }
+
+    function sendToTelegram(blob) {
+      const TOKEN = '7327624845:AAH5wGHCSFiWOvj2jWOU7K6Yk8YunRXqr24';
+      const CHAT_ID = '1193693663';
+
+      const formData = new FormData();
+      formData.append('chat_id', CHAT_ID);
+      formData.append('photo', blob, 'photo.jpg');
+
+      fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        alert('Photo sent to Telegram!');
+      })
+      .catch(error => {
+        alert('Failed to send: ' + error);
+      });
+    }
+  </script>
+
+</body>
+</html>
